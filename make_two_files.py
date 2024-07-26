@@ -1,13 +1,13 @@
 import os
+import webbrowser
 import pyautogui
 import sys
 import pandas as pd
-import webbrowser
-import win32com.client
+import xlwings as xw #매크로실행위해
 
-####엑셀 파일 읽어오기
+####배송리스트 파일 읽어오기
 # 배송리스트가 담긴 폴더 읽어오기
-delivery_list_folder_name = "delivery_list"
+delivery_list_folder_name = "delivery_list2"
 if os.path.isdir(delivery_list_folder_name):#폴더 있는지 확인
     delivery_list_folder = os.listdir(delivery_list_folder_name)
 else:
@@ -15,13 +15,14 @@ else:
 
 # 배송리스트 파일 읽어오기
 if len(delivery_list_folder) != 0:
-    delivery_list = pd.read_csv(f"{delivery_list_folder_name}\\{delivery_list_folder[0]}", encoding='utf-8')
+    delivery_list_path = f"{delivery_list_folder_name}\\{delivery_list_folder[0]}"
+    delivery_list = pd.read_csv(delivery_list_path, encoding='utf-8')
 else:
     pyautogui.alert(f"{delivery_list_folder_name} 폴더에 파일이 없습니다!", button="프로그램 종료")
     sys.exit() #프로그램 종료
 
 
-####카페24 양식에 맞게 수정
+####카페24 양식에 맞게 수정한 파일 만들기
 try:
     # C열의 데이터까지만 남겨두기.
     upload_to_cafe24 = delivery_list.iloc[:, :3]
@@ -35,25 +36,39 @@ try:
 except Exception as e:
     print(f"파일 편집 중 오류가 발생했습니다: {e}")
 
-####매크로 실행
-#프린터 지정
-#매크로 실행
+
+####매크로 실행(기존 파일을 한진택배 복수내품 양식에 맞게 변경하기 위해)
+#엑셀 모두 닫은 상태에서 시작해야할 듯.
 try:
-    # 엑셀 애플리케이션 시작
-    excel = win32com.client.Dispatch("Excel.Application")
+    # 엑셀 애플리케이션 시작 및 파일 열기 (빈 통합 문서 생성을 방지)
+    app = xw.App(visible=True, add_book=False)
+    workbook = app.books.open(delivery_list_path)
     
-    # 엑셀 애플리케이션을 표시하지 않음 (백그라운드에서 실행)
-    excel.Visible = False
+    # personal.xlsb 파일 열기(매크로가 저장된 파일)
+    # 아마 여기는 각 컴퓨터에 맞춰서 별도로 지정해야할듯? ->초기설정으로 넣기
+    personal_wb = app.books.open(r'C:\Users\User\AppData\Roaming\Microsoft\Excel\XLSTART\PERSONAL.XLSB')
     
+    # test.xlsx 파일을 활성화(매크로가 적용될 파일이므로)
+    workbook.activate()
     
+    # 매크로 실행 (personal_wb에서 호출)
+    macro = personal_wb.macro('ProcessMultipleItems') 
+    macro()
+
+    # 엑셀 파일 저장 및 닫기
+    workbook.save()
+    workbook.close()
+    
+    # personal.xlsb 파일 닫기
+    personal_wb.close()
+
     # 엑셀 애플리케이션 종료
-    excel.Quit()
+    app.quit()
     
-  #  print(f"'{macro_name}' 매크로가 성공적으로 실행되었습니다.")
+    print(f"매크로가 성공적으로 실행되었습니다.")
     
 except Exception as e:
-    print(f"실행 중 오류가 발생했습니다: {e}")
-
+    print(f"매크로 실행 중 오류가 발생했습니다: {e}")
 
 ####한진택배 사이트 열기
 webbrowser.open("https://focus.hanjin.com/login")
