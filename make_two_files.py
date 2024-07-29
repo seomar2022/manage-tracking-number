@@ -4,10 +4,14 @@ import pyautogui
 import sys
 import pandas as pd
 import xlwings as xw #매크로실행위해
+import tkinter as tk
+
 
 ####배송리스트 파일 읽어오기
 # 배송리스트가 담긴 폴더 읽어오기
-delivery_list_folder_name = "delivery_list2"
+delivery_list_folder_name = "delivery_list"
+
+
 if os.path.isdir(delivery_list_folder_name):#폴더 있는지 확인
     delivery_list_folder = os.listdir(delivery_list_folder_name)
 else:
@@ -24,14 +28,11 @@ else:
 
 ####카페24 양식에 맞게 수정한 파일 만들기
 try:
-    # C열의 데이터까지만 남겨두기.
-    upload_to_cafe24 = delivery_list.iloc[:, :3]
-
-    # D1 셀에 "수량" 추가 
-    upload_to_cafe24.insert(3, '수량', '') 
+    # B열의 데이터까지만 남겨두기.
+    upload_to_cafe24 = delivery_list.iloc[:, :2]
 
     # 수정된 내용을 새로운 CSV 파일로 저장
-    upload_to_cafe24.to_csv("excel_sample_old.csv", index=False, encoding='utf-8-sig')
+    upload_to_cafe24.to_csv(r"result\excel_sample_old.csv", index=False, encoding='utf-8-sig')
  
 except Exception as e:
     print(f"파일 편집 중 오류가 발생했습니다: {e}")
@@ -56,7 +57,8 @@ try:
     macro()
 
     # 엑셀 파일 저장 및 닫기
-    workbook.save()
+    new_file_path = os.path.join(r"result\uupload_to_hanjin.xlsx")
+    workbook.save(new_file_path)
     workbook.close()
     
     # personal.xlsb 파일 닫기
